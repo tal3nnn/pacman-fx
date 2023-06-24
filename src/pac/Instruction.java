@@ -19,7 +19,7 @@ public class Instruction {
         var lines = new String[]{
             "USE THE ARROW KEYS TO MOVE.",
             "EAT ALL PAC-GUMS TO FINISH A LEVEL.",
-            "GHOSTS WILL KILL YOU ASIDE IF YOU EAT",
+            "GHOSTS WILL KILL YOU UNLESS YOU EAT",
             "A POWER PAC-GUM.",
             "IN ARCADE AND RANDOM MODE YOU HAVE TO",
             "ALL LEVELS ( LIMITED ).",
