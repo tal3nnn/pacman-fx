@@ -12,13 +12,15 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
 import java.util.concurrent.atomic.AtomicReference;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 
 /**
  * Project: PAC-MAN
@@ -48,14 +50,27 @@ public class Main extends Application {
         progressScene.setFill(Color.web("#2200ff"));
         progressStage.setScene(progressScene);
 
-        ImageView progressImageView = new ImageView(new Image("file:resources/branding.png"));
-        progressRoot.getChildren().addAll(progressImageView);
+        ImageView brandingImage = new ImageView(new Image("file:resources/branding.png"));
+        brandingImage.setOpacity(0); // Set initial opacity to 0
+        progressRoot.getChildren().add(brandingImage);
+
+        // Fade in animation for branding image
+        FadeTransition fadeIn = new FadeTransition(Duration.seconds(1), brandingImage);
+        fadeIn.setFromValue(0);
+        fadeIn.setToValue(1);
 
         ProgressBar progressBar = new ProgressBar();
         progressBar.setPrefWidth(300);
         progressBar.setPrefHeight(30);
-        // place progress bar in the center of the screen under the branding image
+        progressBar.setStyle("-fx-accent: #2200ff; -fx-background-color: #000000; -fx-border-color: #2200ff;");
         progressBar.setTranslateY(100);
+        progressBar.setVisible(false); // Set the progress bar initially invisible
+
+        // Text above the progress bar
+        Text loadingText = new Text();
+        loadingText.setFill(Color.web("#2200ff"));
+        loadingText.setFont(Font.loadFont("file:resources/pixelNes.otf", 20));
+        loadingText.setVisible(false);
 
         AtomicReference<Double> progress = new AtomicReference<>(0.0);
         Timeline timeline = new Timeline();
@@ -65,7 +80,10 @@ public class Main extends Application {
 
         for (double seconds = 0; seconds <= duration; seconds += 0.033) {
             double progressValue = Math.min(progress.get() + increment, 1.0);
-            KeyFrame keyFrame = new KeyFrame(Duration.seconds(seconds), event -> progressBar.setProgress(progressValue));
+            KeyFrame keyFrame = new KeyFrame(Duration.seconds(seconds), event -> {
+                progressBar.setProgress(progressValue);
+                loadingText.setText(String.format("%.0f%%", progressValue * 100)); // Update percentage text
+            });
             timeline.getKeyFrames().add(keyFrame);
             progress.set(progressValue);
         }
@@ -74,11 +92,31 @@ public class Main extends Application {
             progressStage.close();
             showMenu(primaryStage);
         });
-        timeline.play();
 
-        VBox progressVBox = new VBox(20, progressBar);
-        progressVBox.setAlignment(Pos.CENTER);
-        progressRoot.getChildren().addAll(progressVBox);
+        FadeTransition fadeOut = new FadeTransition(Duration.seconds(1), brandingImage);
+        fadeOut.setFromValue(1);
+        fadeOut.setToValue(0);
+
+        // Sequential transition to fade in branding, then fade it out, and show the loading bar
+        SequentialTransition sequentialTransition = new SequentialTransition(fadeIn,
+                new PauseTransition(Duration.seconds(1)), // Pause for 1 second before fading out
+                fadeOut,
+                new PauseTransition(Duration.seconds(1)) // Pause for 1 second before showing the loading bar
+        );
+
+        // After the branding animation is complete, make the progress bar and text visible and start the timeline
+        sequentialTransition.setOnFinished(event -> {
+            progressBar.setVisible(true);
+            loadingText.setVisible(true);
+            timeline.play();
+        });
+
+        sequentialTransition.play();
+
+        VBox boxProgress = new VBox(10);
+        boxProgress.setAlignment(Pos.CENTER);
+        boxProgress.getChildren().addAll(progressBar, loadingText);
+        progressRoot.getChildren().add(boxProgress);
         progressStage.show();
     }
 
