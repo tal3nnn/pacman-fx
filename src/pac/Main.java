@@ -1,6 +1,10 @@
 package pac;
 
+import java.util.concurrent.atomic.AtomicReference;
+import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.geometry.Pos;
@@ -16,11 +20,6 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
-
-import java.util.concurrent.atomic.AtomicReference;
-import javafx.animation.FadeTransition;
-import javafx.animation.PauseTransition;
-import javafx.animation.SequentialTransition;
 
 /**
  * Project: PAC-MAN
@@ -44,14 +43,15 @@ public class Main extends Application {
         progressStage.initStyle(StageStyle.UNDECORATED);
         progressStage.setResizable(false);
 
-        StackPane progressRoot = new StackPane();
+        VBox progressRoot = new VBox();
+        progressRoot.setAlignment(Pos.CENTER);
         progressRoot.setStyle("-fx-background-color: black;");
         Scene progressScene = new Scene(progressRoot, 600, 500, Color.BLACK);
         progressScene.setFill(Color.web("#2200ff"));
         progressStage.setScene(progressScene);
 
         ImageView brandingImage = new ImageView(new Image("file:resources/branding.png"));
-        brandingImage.setOpacity(0); // Set initial opacity to 0
+        brandingImage.setOpacity(0);
         progressRoot.getChildren().add(brandingImage);
 
         // Fade in animation for branding image
@@ -62,15 +62,27 @@ public class Main extends Application {
         ProgressBar progressBar = new ProgressBar();
         progressBar.setPrefWidth(300);
         progressBar.setPrefHeight(30);
-        progressBar.setStyle("-fx-accent: #2200ff; -fx-background-color: #000000; -fx-border-color: #2200ff;");
-        progressBar.setTranslateY(100);
-        progressBar.setVisible(false); // Set the progress bar initially invisible
+        progressBar.setStyle("-fx-accent: #2200ff; -fx-control-inner-background: black; -fx-border-color: #2200ff; -fx-border-width: 3;");
+
+        // Text inside the progress bar
+        Text textPercent = new Text();
+        textPercent.setFill(Color.web("WHITE"));
+        textPercent.setFont(Font.loadFont("file:resources/pixelNes.otf", 20));
 
         // Text above the progress bar
-        Text loadingText = new Text();
-        loadingText.setFill(Color.web("#2200ff"));
-        loadingText.setFont(Font.loadFont("file:resources/pixelNes.otf", 20));
-        loadingText.setVisible(false);
+        Text textLoading = new Text("LOADING");
+        textLoading.setFill(Color.web("#2200ff"));
+        textLoading.setFont(Font.loadFont("file:resources/pixelNes.otf", 20));
+
+        VBox boxProgress = new VBox(progressBar, textPercent);
+        boxProgress.setAlignment(Pos.CENTER);
+        boxProgress.setSpacing(-28);
+
+        VBox boxLoading = new VBox(textLoading, boxProgress);
+        boxLoading.setAlignment(Pos.CENTER);
+        boxLoading.setTranslateY(-50);
+        boxLoading.setVisible(false);
+        progressRoot.getChildren().add(boxLoading);
 
         AtomicReference<Double> progress = new AtomicReference<>(0.0);
         Timeline timeline = new Timeline();
@@ -82,7 +94,7 @@ public class Main extends Application {
             double progressValue = Math.min(progress.get() + increment, 1.0);
             KeyFrame keyFrame = new KeyFrame(Duration.seconds(seconds), event -> {
                 progressBar.setProgress(progressValue);
-                loadingText.setText(String.format("%.0f%%", progressValue * 100)); // Update percentage text
+                textPercent.setText(String.format("%.0f%%", progressValue * 100)); // Update percentage text
             });
             timeline.getKeyFrames().add(keyFrame);
             progress.set(progressValue);
@@ -104,19 +116,13 @@ public class Main extends Application {
                 new PauseTransition(Duration.seconds(1)) // Pause for 1 second before showing the loading bar
         );
 
-        // After the branding animation is complete, make the progress bar and text visible and start the timeline
+        // After the branding animation is complete, make the stackProgress visible and start the timeline
         sequentialTransition.setOnFinished(event -> {
-            progressBar.setVisible(true);
-            loadingText.setVisible(true);
+            boxLoading.setVisible(true);
             timeline.play();
         });
 
         sequentialTransition.play();
-
-        VBox boxProgress = new VBox(10);
-        boxProgress.setAlignment(Pos.CENTER);
-        boxProgress.getChildren().addAll(progressBar, loadingText);
-        progressRoot.getChildren().add(boxProgress);
         progressStage.show();
     }
 
